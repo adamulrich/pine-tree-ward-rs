@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Pine Tree Ward Relief Society",
+  "short_name": "Pine Tree RS",
+  "description": "Announcements, schedules, goals, and newsletters for the Pine Tree Ward Relief Society.",
+  "prefer_related_applications": false,
+  "lang": "en-US",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffaf7",
+  "theme_color": "#3a203d",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
