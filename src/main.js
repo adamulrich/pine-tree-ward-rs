@@ -159,10 +159,16 @@ function createLessonSummaryCard(item) {
   const title = document.createElement("h3");
   title.textContent = item.title || "Lesson summary";
 
-  const summary = document.createElement("p");
-  summary.className = "item-text";
-  summary.textContent = item.summary;
-  body.append(time, title, summary);
+  const summaryCopy = document.createElement("div");
+  summaryCopy.className = "lesson-summary-copy";
+  const paragraphs = item.summary.split(/\r?\n\s*\r?\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  paragraphs.forEach((paragraph) => {
+    const summary = document.createElement("p");
+    summary.className = "item-text";
+    summary.textContent = paragraph;
+    summaryCopy.append(summary);
+  });
+  body.append(time, title, summaryCopy);
   article.append(body);
 
   if (item.link) {
