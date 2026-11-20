@@ -1,4 +1,4 @@
-import { normalizeRows } from "./data.js";
+import { normalizeRows, parseDate } from "./data.js";
 import { parseCsv } from "./csv.js";
 import { bulletinDate, groupBulletins } from "./bulletins.js";
 import { normalizeNewsletters } from "./newsletters.js";
@@ -23,6 +23,7 @@ const sections = [
     target: "lessons-list",
     toggle: "lessons-toggle",
     includeInstructor: true,
+    renderSummary: true,
     empty: "There are no upcoming lessons.",
     error: "The lesson schedule is temporarily unavailable.",
   },
@@ -131,15 +132,83 @@ function renderSection(config, rows) {
   }
 }
 
+function normalizeLessonSummaries(rows) {
+  return rows
+    .map((row) => ({
+      displayDate: parseDate(row["Display Date"]),
+      title: String(row.Text ?? "").trim(),
+      summary: String(row.Summary ?? row["Lesson Summary"] ?? "").trim(),
+      link: String(row.Link ?? "").trim(),
+    }))
+    .filter((item) => item.displayDate && item.summary)
+    .sort((a, b) => b.displayDate - a.displayDate);
+}
+
+function createLessonSummaryCard(item) {
+  const article = document.createElement("article");
+  article.className = "item-card lesson-summary-card";
+
+  const body = document.createElement("div");
+  body.className = "item-body";
+
+  const time = document.createElement("time");
+  time.className = "item-date";
+  time.dateTime = item.displayDate.toISOString().slice(0, 10);
+  time.textContent = dateFormatter.format(item.displayDate);
+
+  const title = document.createElement("h3");
+  title.textContent = item.title || "Lesson summary";
+
+  const summary = document.createElement("p");
+  summary.className = "item-text";
+  summary.textContent = item.summary;
+  body.append(time, title, summary);
+  article.append(body);
+
+  if (item.link) {
+    const link = document.createElement("a");
+    link.className = "item-link";
+    link.href = item.link;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Lesson details";
+    link.setAttribute("aria-label", `View lesson details: ${item.title || item.summary}`);
+    article.append(link);
+  }
+
+  return article;
+}
+
+function renderLessonSummaries(rows) {
+  const target = document.getElementById("lesson-summaries-list");
+  const summaries = normalizeLessonSummaries(rows ?? []);
+
+  if (!summaries.length) {
+    hideToggle("lesson-summaries-toggle");
+    showMessage(target, "Lesson summaries will appear here when available.");
+    return;
+  }
+
+  setupExpandableList("lesson-summaries-toggle", summaries.length, "summaries", (count) => {
+    target.replaceChildren(...summaries.slice(0, count).map(createLessonSummaryCard));
+  }, 1);
+}
+
 async function loadSection(config) {
   const target = document.getElementById(config.target);
   try {
     const response = await fetch(config.url, { cache: "no-store" });
     if (!response.ok) throw new Error(`Request failed with ${response.status}`);
-    renderSection(config, parseCsv(await response.text()));
+    const rows = parseCsv(await response.text());
+    renderSection(config, rows);
+    if (config.renderSummary) renderLessonSummaries(rows);
   } catch (error) {
     console.error(`Could not load ${config.target}`, error);
     hideToggle(config.toggle);
+    if (config.renderSummary) {
+      hideToggle("lesson-summaries-toggle");
+      showMessage(document.getElementById("lesson-summaries-list"), config.error, true);
+    }
     showMessage(target, config.error, true);
   }
 }
